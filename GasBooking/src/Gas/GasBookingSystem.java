@@ -1,6 +1,7 @@
 package Gas;
 
 import java.sql.SQLException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,15 +40,18 @@ public class GasBookingSystem {
                      bookRefill();
                      break;
                  case 3:
-                     adminLogin();
+                     editConsumerDetails(); 
                      break;
                  case 4:
+                     adminLogin();
+                     break;
+                 case 5:
                      System.out.println("Goodbye!Welcome back again...............");
                      break;
                  default:
                      System.out.println("Invalid choice. Please try again.");
              }
-         } while (choice != 6);
+         } while (choice != 5);
 
          scanner.close();
         try {
@@ -60,12 +64,13 @@ public class GasBookingSystem {
 
     private static void displayMenu() {
         System.out.println("Welcome To Gas Booking System!!!");
-        System.out.println("-------------------");
+        System.out.println("-----------------:)-----------------");
         System.out.println("1. New Consumer Registration");
         System.out.println("2. Book Refill");
-     
-        System.out.println("3. Admin Login");
-        System.out.println("4. Exit");
+        System.out.println("3. Edit Consumer Details");
+        System.out.println("4. Admin Login");
+        System.out.println("5. Exit Application");
+        System.out.println("-----------------:)------------------");
     }
     private static void registerNewConsumer() {
     	 System.out.print("Enter Consumer ID: ");
@@ -109,12 +114,14 @@ public class GasBookingSystem {
             return;
         }
 
-        int bookingID = bookingIDCounter; 
-        Booking newBooking = new Booking(consumerID, bookingID, "Pending", "Unpaid");
-        bookings.put(consumerID, newBooking);
-        bookingIDCounter++;
-
         try {
+            int maxBookingID = DatabaseManager.getMaxBookingID(); // Fetch the maximum booking ID from the database
+            int bookingID = Math.max(maxBookingID + 1, bookingIDCounter); // Generate the new booking ID
+//Object
+            Booking newBooking = new Booking(consumerID, bookingID, "Pending", "Unpaid");
+            bookings.put(consumerID, newBooking);
+            bookingIDCounter = bookingID + 1; // Increment the bookingIDCounter
+
             DatabaseManager.insertBooking(newBooking);
             System.out.println("Refill booked successfully! Booking ID: " + newBooking.getBookingID());
         } catch (SQLException e) {
@@ -122,6 +129,12 @@ public class GasBookingSystem {
             e.printStackTrace();
         }
     }
+   
+
+
+
+
+
     private static void adminLogin() {
         System.out.print("Enter Admin Username: ");
         String adminUsername = scanner.next();
@@ -170,17 +183,18 @@ public class GasBookingSystem {
         List<Consumer> allConsumers = DatabaseManager.getAllConsumers();
         for (Consumer consumer : allConsumers) {
             System.out.println(consumer);
-            System.out.println("-------------------");
+            System.out.println("------------:)----------");
         }
     }
 
     private static void displayAdminMenu() {
         System.out.println("Admin Menu");
-        System.out.println("-----------------------");
+        System.out.println("-----------------:)-----------------");
         System.out.println("1. View Consumer Details");
         System.out.println("2. Update Consumer Payment Status");
         System.out.println("3. Update Consumer Delivery Status");
         System.out.println("4. Logout!");
+       
     }
 
 
@@ -318,6 +332,67 @@ public class GasBookingSystem {
             System.out.println("Delivery status updated successfully!");
         } catch (SQLException e) {
             System.out.println("Failed to update delivery status in the database.");
+            e.printStackTrace();
+        }
+    }
+    private static void editConsumerDetails() {
+        System.out.print("Enter Consumer ID: ");
+        String consumerID = scanner.next();
+
+        if (!consumers.containsKey(consumerID)) {
+            System.out.println("Consumer with ID " + consumerID + " does not exist.");
+            return;
+        }
+
+        System.out.println("Select the field you want to edit:");
+        System.out.println("1. Name");
+        System.out.println("2. Address");
+        System.out.println("3. Phone");
+        System.out.println("4. Gas Name");
+        System.out.println("5. Usage Details");
+        System.out.print("Enter your choice: ");
+        int fieldChoice = scanner.nextInt();
+        scanner.nextLine(); // Consume the remaining newline character
+
+        String updatedValue;
+
+        switch (fieldChoice) {
+            case 1:
+                System.out.print("Enter updated name: ");
+                updatedValue = scanner.nextLine();
+                consumers.get(consumerID).setName(updatedValue);
+                break;
+            case 2:
+                System.out.print("Enter updated address: ");
+                updatedValue = scanner.nextLine();
+                consumers.get(consumerID).setAddress(updatedValue);
+                break;
+            case 3:
+                System.out.print("Enter updated phone: ");
+                updatedValue = scanner.nextLine();
+                consumers.get(consumerID).setPhone(updatedValue);
+                break;
+            case 4:
+                System.out.print("Enter updated gas name: ");
+                updatedValue = scanner.nextLine();
+                consumers.get(consumerID).setGasName(updatedValue);
+                break;
+            case 5:
+                System.out.print("Enter updated usage details: ");
+                updatedValue = scanner.nextLine();
+                consumers.get(consumerID).setUsageDetails(updatedValue);
+                break;
+            default:
+                System.out.println("Invalid choice. No fields were updated.");
+                return;
+        }
+
+        try {
+            // Update the consumer details in the database
+            DatabaseManager.updateConsumerDetails(consumerID, consumers.get(consumerID));
+            System.out.println("Consumer details updated successfully!");
+        } catch (SQLException e) {
+            System.out.println("Failed to update consumer details in the database.");
             e.printStackTrace();
         }
     }

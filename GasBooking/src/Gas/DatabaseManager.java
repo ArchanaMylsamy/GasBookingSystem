@@ -17,10 +17,17 @@ public class DatabaseManager {
     private static Connection connection;
 
     public static void connect() throws SQLException {
-        connection = DriverManager.getConnection(DATABASE_URL,DATABASE_USERNAME,DATABASE_PASSWORD);
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            System.out.println("MySQL JDBC driver not found.");
+            e.printStackTrace();
+            return;
+        }
+
+        connection = DriverManager.getConnection(DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD);
         createTablesIfNotExist();
     }
-
     public static void disconnect() throws SQLException {
         if (connection != null) {
             connection.close();
@@ -128,4 +135,28 @@ public class DatabaseManager {
         statement.setInt(3, bookingID);
         statement.executeUpdate();
     }
+    public static int getMaxBookingID() throws SQLException {
+        String selectQuery = "SELECT MAX(booking_id) FROM bookings;";
+        try (ResultSet resultSet = connection.createStatement().executeQuery(selectQuery)) {
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to fetch the maximum booking ID from the database.");
+            e.printStackTrace();
+        }
+        return 0; // Return 0 if there's an error or no booking ID is found in the database.
+    }
+    public static void updateConsumerDetails(String consumerID, Consumer updatedConsumer) throws SQLException {
+        String updateQuery = "UPDATE consumers SET name = ?, address = ?, phone = ?, gas_name = ?, usage_details = ? WHERE consumer_id = ?;";
+        PreparedStatement statement = connection.prepareStatement(updateQuery);
+        statement.setString(1, updatedConsumer.getName());
+        statement.setString(2, updatedConsumer.getAddress());
+        statement.setString(3, updatedConsumer.getPhone());
+        statement.setString(4, updatedConsumer.getGasName());
+        statement.setString(5, updatedConsumer.getUsageDetails());
+        statement.setString(6, consumerID);
+        statement.executeUpdate();
+    }
+    
 }
